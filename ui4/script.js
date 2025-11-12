@@ -1,0 +1,167 @@
+const chatBox = document.getElementById("chat-box");
+const input = document.getElementById("user-input");
+const sendBtn = document.getElementById("send-btn");
+const closeBtn = document.getElementById("close-btn");
+const chatbot = document.getElementById("chatbot");
+const toggleBtn = document.getElementById("chat-toggle");
+
+const BACKEND_URL = "http://localhost:5678/webhook/gifty";
+let hasSuggested = false;
+
+sendBtn.addEventListener("click", sendMessage);
+input.addEventListener("keypress", (e) => e.key === "Enter" && sendMessage());
+
+closeBtn.addEventListener("click", () => {
+  chatbot.style.display = "none";
+  toggleBtn.style.display = "flex";
+});
+toggleBtn.addEventListener("click", () => {
+  chatbot.style.display = "flex";
+  toggleBtn.style.display = "none";
+});
+
+function addUserMessage(text) {
+  const msg = document.createElement("div");
+  msg.classList.add("user-message");
+  msg.textContent = text;
+  chatBox.appendChild(msg);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function addBotMessage(html) {
+  const msg = document.createElement("div");
+  msg.classList.add("bot-message");
+  msg.innerHTML = html;
+  chatBox.appendChild(msg);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+async function sendMessage() {
+  const userMessage = input.value.trim();
+  if (!userMessage) return;
+  addUserMessage(userMessage);
+  input.value = "";
+
+  const thinking = document.createElement("div");
+  thinking.classList.add("bot-message");
+  thinking.textContent = "💭 Gifty is thinking...";
+  chatBox.appendChild(thinking);
+  chatBox.scrollTop = chatBox.scrollHeight;
+
+  try {
+    const res = await fetch(BACKEND_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: userMessage }),
+    });
+    const data = await res.json();
+    thinking.remove();
+    addBotMessage(data.reply || data.message || "🤖 No response received.");
+
+    const lower = userMessage.toLowerCase();
+    const giftWords = ["birthday", "anniversary", "valentine", "farewell", "annual", "gift", "occasion", "event", "present", "party"];
+    const isGift = giftWords.some(w => lower.includes(w));
+
+    if (isGift) {
+      if (!hasSuggested) {
+        addBotMessage("Got it! Let me find some great gift ideas for that 💡");
+        setTimeout(showButtons, 600);
+        hasSuggested = true;
+      } else {
+        showGiftSuggestions(userMessage);
+      }
+    }
+  } catch (err) {
+    thinking.remove();
+    addBotMessage("⚠️ Error: Could not reach Gifty backend.");
+    console.error(err);
+  }
+}
+
+function showButtons() {
+  chatBox.insertAdjacentHTML(
+    "beforeend",
+    `
+    <div class="bot-message">💡 Here are some popular gift occasions you can explore 🎁</div>
+    <div class="button-container">
+      <button onclick="selectOccasion('Birthday')">🎂 Birthday</button>
+      <button onclick="selectOccasion('Anniversary')">💖 Anniversary</button>
+      <button onclick="selectOccasion('Valentine’s Day')">❤️ Valentine’s Day</button>
+      <button onclick="selectOccasion('Farewell')">👋 Farewell</button>
+      <button onclick="selectOccasion('Annual Day')">🏆 Annual Day</button>
+    </div>`
+  );
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function selectOccasion(occasion) {
+  addUserMessage(occasion);
+  showGiftSuggestions(occasion);
+}
+
+function showGiftSuggestions(text) {
+  const lower = text.toLowerCase();
+  let occasion = "Gift Ideas";
+  let links = [];
+
+  if (lower.includes("birthday")) {
+    occasion = "Birthday";
+    links = [
+      { label: "🎂 Birthday Explosion Box – Amazon", url: "https://www.amazon.in/s?k=birthday+explosion+box" },
+      { label: "🎁 Personalized Birthday Mug – Amazon", url: "https://www.amazon.in/s?k=personalized+birthday+mug" },
+      { label: "🎉 Birthday Gift Combo – Flipkart", url: "https://www.flipkart.com/search?q=birthday+gift+combo" },
+      { label: "🎈 Birthday Greeting Card – Flipkart", url: "https://www.flipkart.com/search?q=birthday+greeting+card" },
+    ];
+  } 
+  else if (lower.includes("anniversary")) {
+    occasion = "Anniversary";
+    links = [
+      { label: "💞 Couple Frame – Amazon", url: "https://www.amazon.in/s?k=couple+photo+frame+anniversary" },
+      { label: "💖 Heart LED Lamp – Amazon", url: "https://www.amazon.in/s?k=heart+led+lamp+anniversary" },
+      { label: "💝 Romantic Gift Box – Flipkart", url: "https://www.flipkart.com/search?q=anniversary+gift+box" },
+      { label: "🕯️ Candle Set – Flipkart", url: "https://www.flipkart.com/search?q=romantic+candle+set" },
+    ];
+  }
+  else if (lower.includes("valentine")) {
+    occasion = "Valentine’s Day";
+    links = [
+      { label: "❤️ Valentine Gift Hamper – Amazon", url: "https://www.amazon.in/s?k=valentine+gift+hamper" },
+      { label: "💌 Love Explosion Box – Amazon", url: "https://www.amazon.in/s?k=love+explosion+box" },
+      { label: "💖 Valentine Combo – Flipkart", url: "https://www.flipkart.com/search?q=valentine+gift+combo" },
+      { label: "🌹 Rose Teddy Gift – Flipkart", url: "https://www.flipkart.com/search?q=rose+teddy+gift" },
+    ];
+  }
+  else if (lower.includes("farewell")) {
+    occasion = "Farewell";
+    links = [
+      { label: "👋 Goodbye Mug – Amazon", url: "https://www.amazon.in/s?k=farewell+mug" },
+      { label: "📖 Farewell Diary – Amazon", url: "https://www.amazon.in/s?k=farewell+diary" },
+      { label: "🎁 Farewell Combo – Flipkart", url: "https://www.flipkart.com/search?q=farewell+gift+combo" },
+      { label: "🖋️ Pen Set – Flipkart", url: "https://www.flipkart.com/search?q=pen+set+gift" },
+    ];
+  }
+  else if (lower.includes("annual")) {
+    occasion = "Annual Day";
+    links = [
+      { label: "🏆 Corporate Trophy – Amazon", url: "https://www.amazon.in/s?k=corporate+trophy+gift" },
+      { label: "🎖️ Appreciation Plaque – Amazon", url: "https://www.amazon.in/s?k=appreciation+plaque+award" },
+      { label: "🎁 Employee Gift Set – Flipkart", url: "https://www.flipkart.com/search?q=employee+gift+set" },
+      { label: "🕯️ Decorative Desk Gift – Flipkart", url: "https://www.flipkart.com/search?q=office+desk+decor+gift" },
+    ];
+  }
+
+  const html = `
+    Here are some great <b>${occasion}</b> ideas 🎁:
+    <ul>
+      ${links.map(l => `<li><a href="${l.url}" target="_blank">${l.label}</a></li>`).join("")}
+    </ul>`;
+  addBotMessage(html);
+}
+
+window.addEventListener("load", () => {
+  addBotMessage(`
+    <strong>I am Gifty AI 😊</strong><br>
+    I can recommend amazing gift ideas for any occasion — just ask me about an event or celebration!
+  `);
+  toggleBtn.style.display = "none";
+});
