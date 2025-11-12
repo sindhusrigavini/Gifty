@@ -7,13 +7,34 @@ const toggleBtn = document.getElementById("chat-toggle");
 
 let hasSuggested = false;
 
+// 🧹 Completely clear any stored or injected messages
+window.addEventListener("load", () => {
+  try {
+    localStorage.clear();
+    sessionStorage.clear();
+  } catch (e) {}
+
+  chatBox.innerHTML = ""; // remove all old HTML nodes
+
+  // Add welcome message
+  addBotMessage(`
+    <strong>I am Gifty AI 😊</strong><br>
+    I can recommend amazing gift ideas for any occasion — just ask me about an event or celebration!
+  `);
+
+  toggleBtn.style.display = "none";
+});
+
 sendBtn.addEventListener("click", sendMessage);
-input.addEventListener("keypress", (e) => e.key === "Enter" && sendMessage());
+input.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") sendMessage();
+});
 
 closeBtn.addEventListener("click", () => {
   chatbot.style.display = "none";
   toggleBtn.style.display = "flex";
 });
+
 toggleBtn.addEventListener("click", () => {
   chatbot.style.display = "flex";
   toggleBtn.style.display = "none";
@@ -55,20 +76,42 @@ function sendMessage() {
 
 function handleUserMessage(userMessage) {
   const lower = userMessage.toLowerCase();
-  const giftWords = ["birthday", "anniversary", "valentine", "farewell", "annual", "gift", "occasion", "event", "present", "party"];
-  const isGift = giftWords.some(w => lower.includes(w));
+  const giftWords = [
+    "birthday",
+    "anniversary",
+    "valentine",
+    "farewell",
+    "annual",
+    "gift",
+    "occasion",
+    "event",
+    "present",
+    "party",
+  ];
+  const isGift = giftWords.some((w) => lower.includes(w));
 
-  if (isGift) {
-    if (!hasSuggested) {
-      addBotMessage("Got it! Let me find some great gift ideas for that 💡");
-      setTimeout(showButtons, 600);
-      hasSuggested = true;
-    } else {
-      showGiftSuggestions(userMessage);
-    }
+if (isGift) {
+  if (!hasSuggested) {
+    addBotMessage("Got it! Let me find some great gift ideas for that 💡");
+    setTimeout(showButtons, 600);
+    hasSuggested = true;
   } else {
-    addBotMessage("😊 Tell me about an occasion or event — I’ll suggest perfect gifts!");
+    showGiftSuggestions(userMessage);
   }
+} else if (
+  /^(hi|hello|hey|how are you|hola|yo|good morning|good afternoon|good evening|what's up|sup|howdy|hi there|hey there|how’s it going|how r u|hru|good day)\b/i.test(userMessage)
+) {
+  const greetings = [
+    "Hey there! 🎉 What are you celebrating today? Let’s find the perfect gift! 💝",
+    "Hi! 😊 It’s great to see you — are you celebrating something special?",
+    "Hello! 🌟 Ready to explore some awesome gift ideas?",
+    "Hey! 💫 Tell me what you’re celebrating, and I’ll find something thoughtful!",
+  ];
+  const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
+  addBotMessage(randomGreeting);
+} else {
+  addBotMessage("Tell me what you’re celebrating, and I’ll help you find the perfect present! 💡");
+}
 }
 
 function showButtons() {
@@ -105,8 +148,7 @@ function showGiftSuggestions(text) {
       { label: "🎉 Birthday Gift Combo – Flipkart", url: "https://www.flipkart.com/search?q=birthday+gift+combo" },
       { label: "🎈 Birthday Greeting Card – Flipkart", url: "https://www.flipkart.com/search?q=birthday+greeting+card" },
     ];
-  } 
-  else if (lower.includes("anniversary")) {
+  } else if (lower.includes("anniversary")) {
     occasion = "Anniversary";
     links = [
       { label: "💞 Couple Frame – Amazon", url: "https://www.amazon.in/s?k=couple+photo+frame+anniversary" },
@@ -114,8 +156,7 @@ function showGiftSuggestions(text) {
       { label: "💝 Romantic Gift Box – Flipkart", url: "https://www.flipkart.com/search?q=anniversary+gift+box" },
       { label: "🕯️ Candle Set – Flipkart", url: "https://www.flipkart.com/search?q=romantic+candle+set" },
     ];
-  }
-  else if (lower.includes("valentine")) {
+  } else if (lower.includes("valentine")) {
     occasion = "Valentine’s Day";
     links = [
       { label: "❤️ Valentine Gift Hamper – Amazon", url: "https://www.amazon.in/s?k=valentine+gift+hamper" },
@@ -123,8 +164,7 @@ function showGiftSuggestions(text) {
       { label: "💖 Valentine Combo – Flipkart", url: "https://www.flipkart.com/search?q=valentine+gift+combo" },
       { label: "🌹 Rose Teddy Gift – Flipkart", url: "https://www.flipkart.com/search?q=rose+teddy+gift" },
     ];
-  }
-  else if (lower.includes("farewell")) {
+  } else if (lower.includes("farewell")) {
     occasion = "Farewell";
     links = [
       { label: "👋 Goodbye Mug – Amazon", url: "https://www.amazon.in/s?k=farewell+mug" },
@@ -132,8 +172,7 @@ function showGiftSuggestions(text) {
       { label: "🎁 Farewell Combo – Flipkart", url: "https://www.flipkart.com/search?q=farewell+gift+combo" },
       { label: "🖋️ Pen Set – Flipkart", url: "https://www.flipkart.com/search?q=pen+set+gift" },
     ];
-  }
-  else if (lower.includes("annual")) {
+  } else if (lower.includes("annual")) {
     occasion = "Annual Day";
     links = [
       { label: "🏆 Corporate Trophy – Amazon", url: "https://www.amazon.in/s?k=corporate+trophy+gift" },
@@ -146,16 +185,19 @@ function showGiftSuggestions(text) {
   const html = `
     Here are some great <b>${occasion}</b> ideas 🎁:
     <ul>
-      ${links.map(l => `<li><a href="${l.url}" target="_blank">${l.label}</a></li>`).join("")}
+      ${links.map((l) => `<li><a href="${l.url}" target="_blank">${l.label}</a></li>`).join("")}
     </ul>`;
   addBotMessage(html);
-}
-
-window.addEventListener("load", () => {
-  addBotMessage(`
-    <strong>I am Gifty AI 😊</strong><br>
-    I can recommend amazing gift ideas for any occasion — just ask me about an event or celebration!
-  `);
-  toggleBtn.style.display = "none";
+  // 🧹 Hard reset on every page load
+window.addEventListener("DOMContentLoaded", () => {
+  try {
+    localStorage.clear();
+    sessionStorage.clear();
+    document.getElementById("chat-box").innerHTML = "";
+  } catch (e) {
+    console.error("Cleanup failed:", e);
+  }
 });
+
+}
 
